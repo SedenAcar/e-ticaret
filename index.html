@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapsamlı E-Ticaret Sistemi</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .product-card {
+            margin-bottom: 20px;
+        }
+        .nav-link {
+            cursor: pointer;
+        }
+        #orderForm, #categoryForm, #productForm {
+            display: none;
+        }
+        .category-item, .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #pagination {
+            margin-top: 20px;
+        }
+        .feature-item {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .feature-item input {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">E-Ticaret</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showProducts()">Ürünler</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showCategories()">Kategoriler</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showCart()">Sepet</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showOrders()">Siparişler</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showProductForm()">Ürün Ekle</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div id="alerts"></div>
+
+        <div id="searchAndFilter" class="mb-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Ürün ara...">
+                </div>
+                <div class="col-md-4">
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">Tüm Kategoriler</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="filterProducts()">Filtrele</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="productList" class="row">
+            <!-- Ürünler JavaScript ile buraya eklenecek -->
+        </div>
+
+        <div id="pagination" class="d-flex justify-content-center">
+            <!-- Sayfalama butonları JavaScript ile buraya eklenecek -->
+        </div>
+
+        <div id="categoryList" style="display: none;">
+            <h2>Kategoriler</h2>
+            <div id="categories">
+                <!-- Kategoriler JavaScript ile buraya eklenecek -->
+            </div>
+            <button class="btn btn-primary mt-3" onclick="showCategoryForm()">Yeni Kategori Ekle</button>
+        </div>
+
+        <div id="categoryForm">
+            <h2 id="categoryFormTitle">Yeni Kategori Ekle</h2>
+            <form onsubmit="addOrUpdateCategory(event)">
+                <div class="mb-3">
+                    <label for="categoryName" class="form-label">Kategori Adı</label>
+                    <input type="text" class="form-control" id="categoryName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="categoryDescription" class="form-label">Açıklama</label>
+                    <textarea class="form-control" id="categoryDescription"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="parentCategory" class="form-label">Üst Kategori</label>
+                    <select class="form-select" id="parentCategory">
+                        <option value="">Yok</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+                <button type="button" class="btn btn-secondary" onclick="cancelCategoryEdit()">İptal</button>
+            </form>
+        </div>
+
+        <div id="productForm" style="display: none;">
+            <h2 id="productFormTitle">Yeni Ürün Ekle</h2>
+            <form onsubmit="addOrUpdateProduct(event)">
+                <div class="mb-3">
+                    <label for="productName" class="form-label">Ürün Adı</label>
+                    <input type="text" class="form-control" id="productName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="productDescription" class="form-label">Açıklama</label>
+                    <textarea class="form-control" id="productDescription" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="productPrice" class="form-label">Fiyat</label>
+                    <input type="number" class="form-control" id="productPrice" required>
+                </div>
+                <div class="mb-3">
+                    <label for="productStock" class="form-label">Stok</label>
+                    <input type="number" class="form-control" id="productStock" required>
+                </div>
+                <div class="mb-3">
+                    <label for="productCategory" class="form-label">Kategori</label>
+                    <select class="form-select" id="productCategory" required>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Özellikler</label>
+                    <div id="productFeatures">
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addFeatureInput()">Özellik Ekle</button>
+                </div>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+                <button type="button" class="btn btn-secondary" onclick="cancelProductEdit()">İptal</button>
+            </form>
+        </div>
+
+        <div id="cart" style="display: none;">
+            <h2>Sepetiniz</h2>
+            <div id="cartItems">
+                <!-- Sepet öğeleri JavaScript ile buraya eklenecek -->
+            </div>
+            <div id="cartTotal" class="mt-3">
+                <!-- Toplam tutar JavaScript ile buraya eklenecek -->
+            </div>
+            <button class="btn btn-primary mt-3" onclick="showOrderForm()">Sipariş Ver</button>
+        </div>
+
+        <div id="orderForm" style="display: none;">
+            <h2>Sipariş Oluştur</h2>
+            <form onsubmit="createOrder(event)">
+                <div class="mb-3">
+                    <label for="customerName" class="form-label">Adınız</label>
+                    <input type="text" class="form-control" id="customerName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="customerEmail" class="form-label">E-posta Adresiniz</label>
+                    <input type="email" class="form-control" id="customerEmail" required>
+                </div>
+                <div class="mb-3">
+                    <label for="shippingAddress" class="form-label">Teslimat Adresi</label>
+                    <textarea class="form-control" id="shippingAddress" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <p>Ödeme Yöntemi</p>
+                    <input type="radio" id="nakit" name="paymentMethod" value="nakit" />
+                    <label for="nakit">Nakit</label>
+                
+                    <input type="radio" id="kart" name="paymentMethod" value="kart" />
+                    <label for="kart">Kart</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Ödeme Yap</button>
+                
+            </form>
+        </div>
+
+        <!--Ödeme Sayfası-->
+        <div id="orderForm" style="display: none;">
+            <form onsubmit="paymentmet()">
+        <div class="mb-3">
+            <label for="cartname" class="form-label">Kartın Üzerindeki İsim</label>
+            <input type="text" class="form-control" id="cartName" required/>
+        </div>
+        <div class="mb-3">
+            <label for="cartNo" class="form-label">Kart Numarası</label>
+            <input type="email" class="form-control" id="customerEmail" required/>
+        </div>
+        <div class="mb-3">
+            <label for="tarih" class="form-label">Ay/Yıl</label>
+            <input type="month" class="form-control" id="tarih" required/>
+        </div>
+        <div class="mb-3">
+            <label for="ccv" class="form-label">CCV</label>
+            <input type="number" class="form-control" min="100" max="999"  required/>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Ödemeyi Tamamla</button>
+        </form>
+        </div>
+
+        <div id="orderList" style="display: none;">
+            <h2>Siparişler</h2>
+            <div id="orders">
+                <!-- Siparişler JavaScript ile buraya eklenecek -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
+    
+    <script>
+        let products = [];
+        let categories = [];
+        let cart = []
+        let currentPage = 1;
+        const itemsPerPage = 9;
+        let editingProductId = null;
+        let editingCategoryId = null;
+        const URL = 'http://localhost:5000';
+        // Sayfa yüklendiğinde çalışacak fonksiyon
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchProducts();
+            fetchCategories();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', filterProducts);
+            document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+        }
+
+        // Ürünleri getir
+        function fetchProducts() {
+            fetch(`${URL}/api/products`)
+                .then(response => response.json())
+                .then(data => {
+                    products = data;
+                    displayProducts();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Kategorileri getir
+        function fetchCategories() {
+            fetch(`${URL}/api/categories`)
+                .then(response => response.json())
+                .then(data => {
+                    categories = data;
+                    populateCategoryFilter();
+                    populateParentCategorySelect();
+                    populateProductCategorySelect();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Ürünleri görüntüle
+        function displayProducts() {
+            const productList = document.getElementById('productList');
+            productList.innerHTML = '';
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const displayedProducts = products.slice(startIndex, endIndex);
+            
+            displayedProducts.forEach(product => {
+                const productCard = `
+                    <div class="col-md-4">
+                        <div class="card product-card">
+                            <div class="card-body">
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text">${product.description}</p>
+                                <p class="card-text">Fiyat: ${product.price} TL</p>
+                                <p class="card-text">Stok: ${product.stock}</p>
+                                <button class="btn btn-primary" onclick="addToCart('${product._id}')">Sepete Ekle</button>
+                                <button class="btn btn-secondary" onclick="showEditProductForm('${product._id}')">Düzenle</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                productList.innerHTML += productCard;
+            });
+            displayPagination();
+        }
+
+        // Sayfalama
+        function displayPagination() {
+            const totalPages = Math.ceil(products.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.innerText = i;
+                button.classList.add('btn', 'btn-outline-primary', 'mx-1');
+                if (i === currentPage) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    displayProducts();
+                });
+                pagination.appendChild(button);
+            }
+        }
+
+        // Kategori filtresini doldur
+        function populateCategoryFilter() {
+            const select = document.getElementById('categoryFilter');
+            select.innerHTML = '<option value="">Tüm Kategoriler</option>';
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category._id;
+                option.textContent = category.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Üst kategori seçimini doldur
+        function populateParentCategorySelect() {
+            const select = document.getElementById('parentCategory');
+            select.innerHTML = '<option value="">Yok</option>';
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category._id;
+                option.textContent = category.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Ürün kategorisi seçimini doldur
+        function populateProductCategorySelect() {
+            const select = document.getElementById('productCategory');
+            select.innerHTML = '';
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category._id;
+                option.textContent = category.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Ürünleri filtrele
+        function filterProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const categoryId = document.getElementById('categoryFilter').value;
+
+            const filteredProducts = products.filter(product => {
+                const matchesSearch = product.name.toLowerCase().includes(searchTerm) || 
+                                      product.description.toLowerCase().includes(searchTerm);
+                const matchesCategory = categoryId === '' || product.category._id === categoryId;
+                return matchesSearch && matchesCategory;
+            });
+
+            currentPage = 1;
+            products = filteredProducts;
+            displayProducts();
+        }
+
+        // Sepete ürün ekle
+        function addToCart(productId) {
+            const product = products.find(p => p._id === productId);
+            if (product) {
+                const existingItem = cart.find(item => item.product._id === productId);
+                if (existingItem) {
+                    existingItem.quantity++;
+                } else {
+                    cart.push({ product: product, quantity: 1 });
+                }
+                updateCartDisplay();
+                showAlert('Ürün sepete eklendi', 'success');
+            }
+        }
+
+        // Sepeti görüntüle
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            cartItems.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                const itemTotal = item.product.price * item.quantity;
+                total += itemTotal;
+                const itemHtml = `
+                    <div class="cart-item">
+                        <span>${item.product.name} - ${item.quantity} adet - ${itemTotal} TL</span>
+                        <button class="btn btn-sm btn-danger" onclick="removeFromCart('${item.product._id}')">Kaldır</button>
+                    </div>
+                `;
+                cartItems.innerHTML += itemHtml;
+            });
+            cartTotal.innerHTML = `<strong>Toplam: ${total} TL</strong>`;
+        }
+
+        // Sepetten ürün çıkar
+        function removeFromCart(productId) {
+            const index = cart.findIndex(item => item.product._id === productId);
+            if (index !== -1) {
+                if (cart[index].quantity > 1) {
+                    cart[index].quantity--;
+                } else {
+                    cart.splice(index, 1);
+                }
+                updateCartDisplay();
+                showAlert('Ürün sepetten çıkarıldı', 'warning');
+            }
+        }
+
+        // Sipariş oluştur
+        async function createOrder(event) {
+    event.preventDefault();
+    const customerName = document.getElementById('customerName').value;
+    const customerEmail = document.getElementById('customerEmail').value;
+    const shippingAddress = document.getElementById('shippingAddress').value;
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+    const orderData = {
+        customerName,
+        customerEmail,
+        shippingAddress,
+        paymentMethod,
+        items: cart.map(item => ({
+            product: item.product._id,
+            quantity: item.quantity,
+            price: item.product.price
+        })),
+        totalAmount: cart.reduce((total, item) => total + item.product.price * item.quantity, 0)
+    };
+
+    try {
+        const response = await fetch(`${URL}/api/orders`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (paymentMethod === 'kart') {
+            showPaymentForm(data._id);
+        } else {
+            showAlert('Sipariş başarıyla oluşturuldu!', 'success');
+            cart = [];
+            updateCartDisplay();
+            showOrders();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Sipariş oluşturulurken bir hata oluştu: ' + error.message, 'danger');
+    }
+}
+function showPaymentForm(orderId) {
+    const paymentForm = `
+        <div id="paymentForm" class="mt-3">
+            <h3>Kart Bilgileri</h3>
+            <form onsubmit="processPayment(event, '${orderId}')">
+                <div class="mb-3">
+                    <label for="cardName" class="form-label">Kartın Üzerindeki İsim</label>
+                    <input type="text" class="form-control" id="cardName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="cardNumber" class="form-label">Kart Numarası</label>
+                    <input type="text" class="form-control" id="cardNumber" required>
+                </div>
+                <div class="mb-3">
+                    <label for="expiryDate" class="form-label">Son Kullanma Tarihi</label>
+                    <input type="month" class="form-control" id="expiryDate" required>
+                </div>
+                <div class="mb-3">
+                    <label for="cvv" class="form-label">CVV</label>
+                    <input type="number" class="form-control" id="cvv" min="100" max="999" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Ödemeyi Tamamla</button>
+            </form>
+        </div>
+    `;
+    document.getElementById('orderForm').innerHTML += paymentForm;
+}
+
+async function processPayment(event, orderId) {
+    event.preventDefault();
+    // Burada gerçek bir ödeme işlemi simüle edilebilir
+    // Kart bilgileri kaydedilmeden sadece işlem yapıldığı varsayılıyor
+    try {
+        const response = await fetch(`${URL}/api/orders/${orderId}/pay`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ paymentStatus: 'completed' }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        showAlert('Ödeme başarıyla tamamlandı!', 'success');
+        cart = [];
+        updateCartDisplay();
+        showOrders();
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Ödeme işlemi sırasında bir hata oluştu: ' + error.message, 'danger');
+    }
+}
+
+        // Kategorileri görüntüle
+        function showCategories() {
+            document.getElementById('productList').style.display = 'none';
+            document.getElementById('cart').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('orderList').style.display = 'none';
+            document.getElementById('categoryList').style.display = 'block';
+            document.getElementById('categoryForm').style.display = 'none';
+            document.getElementById('productForm').style.display = 'none';
+
+            const categoriesContainer = document.getElementById('categories');
+            categoriesContainer.innerHTML = '';
+            categories.forEach(category => {
+                const categoryHtml = `
+                    <div class="category-item">
+                        <span>${category.name}</span>
+                        <div>
+                            <button class="btn btn-sm btn-primary" onclick="showEditCategoryForm('${category._id}')">Düzenle</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCategory('${category._id}')">Sil</button>
+                        </div>
+                    </div>
+                `;
+                categoriesContainer.innerHTML += categoryHtml;
+            });
+        }
+
+        // Kategori ekleme/güncelleme formunu göster
+        function showCategoryForm() {
+            document.getElementById('categoryFormTitle').textContent = editingCategoryId ? 'Kategori Düzenle' : 'Yeni Kategori Ekle';
+            document.getElementById('categoryForm').style.display = 'block';
+            document.getElementById('categoryList').style.display = 'none';
+        }
+
+        // Kategori düzenleme formunu göster
+        function showEditCategoryForm(categoryId) {
+            editingCategoryId = categoryId;
+            const category = categories.find(c => c._id === categoryId);
+            if (category) {
+                document.getElementById('categoryName').value = category.name;
+                document.getElementById('categoryDescription').value = category.description;
+                document.getElementById('parentCategory').value = category.parentCategory || '';
+                showCategoryForm();
+            }
+        }
+
+        // Kategori ekle/güncelle
+        function addOrUpdateCategory(event) {
+            event.preventDefault();
+            const name = document.getElementById('categoryName').value;
+            const description = document.getElementById('categoryDescription').value;
+            const parentCategory = document.getElementById('parentCategory').value;
+
+            const categoryData = {
+                name,
+                description,
+                parentCategory: parentCategory || null
+            };
+
+            const url = editingCategoryId 
+                ? `/api/categories/${editingCategoryId}`
+                : '/api/categories';
+            const method = editingCategoryId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(categoryData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (editingCategoryId) {
+                    const index = categories.findIndex(c => c._id === editingCategoryId);
+                    if (index !== -1) {
+                        categories[index] = data;
+                    }
+                    showAlert('Kategori başarıyla güncellendi!', 'success');
+                } else {
+                    categories.push(data);
+                    showAlert('Kategori başarıyla eklendi!', 'success');
+                }
+                editingCategoryId = null;
+                showCategories();
+                fetchCategories(); // Kategori listesini güncelle
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                showAlert('Kategori eklenirken/güncellenirken bir hata oluştu.', 'danger');
+            });
+        }
+
+        // Kategori sil
+        function deleteCategory(categoryId) {
+            if (confirm('Bu kategoriyi silmek istediğinizden emin misiniz?')) {
+                fetch(`/api/categories/${categoryId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    categories = categories.filter(c => c._id !== categoryId);
+                    showAlert('Kategori başarıyla silindi!', 'success');
+                    showCategories();
+                    fetchCategories(); // Kategori listesini güncelle
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    showAlert('Kategori silinirken bir hata oluştu.', 'danger');
+                });
+            }
+        }
+
+        // Ürün ekleme/güncelleme formunu göster
+        function showProductForm() {
+            document.getElementById('productFormTitle').textContent = editingProductId ? 'Ürün Düzenle' : 'Yeni Ürün Ekle';
+            document.getElementById('productList').style.display = 'none';
+            document.getElementById('cart').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('categoryList').style.display = 'none';
+            document.getElementById('orderList').style.display = 'none';
+            document.getElementById('productForm').style.display = 'block';
+        }
+
+        // Ürün düzenleme formunu göster
+        function showEditProductForm(productId) {
+            editingProductId = productId;
+            const product = products.find(p => p._id === productId);
+            if (product) {
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productDescription').value = product.description;
+                document.getElementById('productPrice').value = product.price;
+                document.getElementById('productStock').value = product.stock;
+                document.getElementById('productCategory').value = product.category._id;
+                
+                // Özellikler
+                const featuresContainer = document.getElementById('productFeatures');
+                featuresContainer.innerHTML = '';
+                product.features.forEach(feature => {
+                    addFeatureInput(feature.name, feature.value);
+                });
+
+                showProductForm();
+            }
+        }
+
+        // Ürün ekle/güncelle
+        function addOrUpdateProduct(event) {
+    event.preventDefault();
+    const name = document.getElementById('productName').value;
+    const description = document.getElementById('productDescription').value;
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const stock = parseInt(document.getElementById('productStock').value);
+    const category = document.getElementById('productCategory').value;
+
+    const features = [];
+    const featureInputs = document.querySelectorAll('.feature-item');
+    featureInputs.forEach(item => {
+        const featureName = item.querySelector('input[name="featureName"]').value;
+        const featureValue = item.querySelector('input[name="featureValue"]').value;
+        if (featureName && featureValue) {
+            features.push({ name: featureName, value: featureValue });
+        }
+    });
+
+    const productData = {
+        productName: name,
+        productDescription: description,
+        productPrice: price,
+        productStock: stock,
+        productCategory: category,
+        productFeatures: features
+    };
+
+    const url = editingProductId 
+        ? `${URL}/api/products/${editingProductId}`
+        : `${URL}/api/products`;
+    const method = editingProductId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (editingProductId) {
+            const index = products.findIndex(p => p._id === editingProductId);
+            if (index !== -1) {
+                products[index] = data;
+            }
+            showAlert('Ürün başarıyla güncellendi!', 'success');
+        } else {
+            products.push(data);
+            showAlert('Ürün başarıyla eklendi!', 'success');
+        }
+        editingProductId = null;
+        showProducts();
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        showAlert('Ürün eklenirken/güncellenirken bir hata oluştu.', 'danger');
+    });
+}
+
+        // Ürün özelliği giriş alanı ekle
+        function addFeatureInput(name = '', value = '') {
+            const featuresContainer = document.getElementById('productFeatures');
+            const featureItem = document.createElement('div');
+            featureItem.classList.add('feature-item');
+            featureItem.innerHTML = `
+                <input type="text" class="form-control" name="featureName" placeholder="Özellik Adı" value="${name}" required>
+                <input type="text" class="form-control" name="featureValue" placeholder="Özellik Değeri" value="${value}" required>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeFeatureInput(this)">Kaldır</button>
+            `;
+            featuresContainer.appendChild(featureItem);
+        }
+
+        // Ürün özelliği giriş alanını kaldır
+        function removeFeatureInput(button) {
+            button.parentElement.remove();
+        }
+
+        // Siparişleri görüntüle
+        function showOrders() {
+            document.getElementById('productList').style.display = 'none';
+            document.getElementById('cart').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('categoryList').style.display = 'none';
+            document.getElementById('orderList').style.display = 'block';
+            document.getElementById('productForm').style.display = 'none';
+
+            fetch('http://localhost:5000/api/orders')
+                .then(response => response.json())
+                .then(orders => {
+                    const ordersContainer = document.getElementById('orders');
+                    ordersContainer.innerHTML = '';
+                    orders.forEach(order => {
+                        const orderHtml = `
+                            <div class="order-item mb-3 p-3 border">
+                                <h5>Sipariş #${order._id}</h5>
+                                <p>Müşteri: ${order.customerName}</p>
+                                <p>E-posta: ${order.customerEmail}</p>
+                                <p>Toplam: ${order.totalAmount} TL</p>
+                                <p>Durum: 
+                                    <select onchange="updateOrderStatus('${order._id}', this.value)">
+                                        <option value="Beklemede" ${order.status === 'Beklemede' ? 'selected' : ''}>Beklemede</option>
+                                        <option value="İşleniyor" ${order.status === 'İşleniyor' ? 'selected' : ''}>İşleniyor</option>
+                                        <option value="Gönderildi" ${order.status === 'Gönderildi' ? 'selected' : ''}>Gönderildi</option>
+                                        <option value="Tamamlandı" ${order.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
+                                    </select>
+                                </p>
+                                <button class="btn btn-sm btn-info" onclick="showOrderDetails('${order._id}')">Detaylar</button>
+                            </div>
+                        `;
+                        ordersContainer.innerHTML += orderHtml;
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Sipariş durumu güncelleme
+        function updateOrderStatus(orderId, newStatus) {
+            fetch(`${URL}/api/orders/${orderId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert('Sipariş durumu başarıyla güncellendi!', 'success');
+                showOrders();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                showAlert('Sipariş durumu güncellenirken bir hata oluştu.', 'danger');
+            });
+        }
+
+        // Sipariş detaylarını görüntüle
+        function showOrderDetails(orderId) {
+            fetch(`${URL}/api/orders/${orderId}`)
+                .then(response => response.json())
+                .then(order => {
+                    const orderDetails = `
+                        <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Sipariş Detayları</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p><strong>Sipariş ID:</strong> ${order._id}</p>
+                                        <p><strong>Müşteri:</strong> ${order.customerName}</p>
+                                        <p><strong>E-posta:</strong> ${order.customerEmail}</p>
+                                        <p><strong>Adres:</strong> ${order.shippingAddress}</p>
+                                        <p><strong>Toplam:</strong> ${order.totalAmount} TL</p>
+                                        <p><strong>Durum:</strong> ${order.status}</p>
+                                        <h6>Ürünler:</h6>
+                                        <ul>
+                                            ${order.items.map(item => `
+                                                <li>${item.product.name} - ${item.quantity} adet - ${item.price} TL</li>
+                                            `).join('')}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', orderDetails);
+                    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                    modal.show();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Uyarı göster
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            alertsContainer.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Görünüm değiştirme fonksiyonları
+        function showProducts() {
+            document.getElementById('productList').style.display = 'flex';
+            document.getElementById('cart').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('categoryList').style.display = 'none';
+            document.getElementById('orderList').style.display = 'none';
+            document.getElementById('productForm').style.display = 'none';
+            fetchProducts();
+        }
+
+        function showCart() {
+            document.getElementById('productList').style.display = 'none';
+            document.getElementById('cart').style.display = 'block';
+            document.getElementById('orderForm').style.display = 'none';
+            document.getElementById('categoryList').style.display = 'none';
+            document.getElementById('orderList').style.display = 'none';
+            document.getElementById('productForm').style.display = 'none';
+            updateCartDisplay();
+        }
+
+        function showOrderForm() {
+            document.getElementById('productList').style.display = 'none';
+            document.getElementById('cart').style.display = 'none';
+            document.getElementById('orderForm').style.display = 'block';
+            document.getElementById('categoryList').style.display = 'none';
+            document.getElementById('orderList').style.display = 'none';
+            document.getElementById('productForm').style.display = 'none';
+        }
+
+        function cancelCategoryEdit() {
+            editingCategoryId = null;
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryDescription').value = '';
+            document.getElementById('parentCategory').value = '';
+            showCategories();
+        }
+
+        function cancelProductEdit() {
+            editingProductId = null;
+            document.getElementById('productName').value = '';
+            document.getElementById('productDescription').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productStock').value = '';
+            document.getElementById('productCategory').value = '';
+            document.getElementById('productFeatures').innerHTML = '';
+            showProducts();
+        }
+
+        // Başlangıçta ürünleri göster
+        showProducts();
+    </script>
+</body>
+</html>
